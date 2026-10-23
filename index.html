@@ -10,6 +10,8 @@
 :root{--bg:#d9e6f4;--card:#f8fbff;--soft:#edf3fb;--fg:#273049;--mute:#66708f;--line:#c9d8ec;--pri:#3f72d9;--pri-d:#2f5bb5;--pri-soft:#dfe9fb;--sun:#efc54a;--mine:#7c62d6;--mine-d:#6249b8;--mine-soft:#e9e3fa;--ok:#13915a;--ok-bg:#d3f0e0;--ok-sh:#9fd8bb;--bad:#d84542;--bad-bg:#f8dcdc;--bad-sh:#eab0ae;--sans:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--cute:"Jua","Gowun Dodum","Apple SD Gothic Neo",sans-serif;color-scheme:light}
 body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;background-image:radial-gradient(circle at 10% 6%,#efe3b8 0 80px,transparent 81px),radial-gradient(circle at 94% 28%,#cbdcf1 0 120px,transparent 121px);background-attachment:fixed}
 [hidden]{display:none!important}
+html{height:100%;overflow:hidden;overscroll-behavior:none}
+body{height:100%;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch}
 #addbox{display:flex;flex-direction:column;gap:10px}
 *{box-sizing:border-box}
 .wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:14px}
@@ -103,8 +105,6 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 .dvstat{font-size:13px;color:var(--mute);background:var(--soft);border-radius:12px;padding:8px 12px}
 .qw{display:flex;justify-content:center;align-items:center;gap:10px}
 .spk{align-self:center;border-radius:999px;padding:7px 16px;font-size:15px}
-.cr b{cursor:pointer}
-.cr b:active{color:var(--pri)}
 .tog{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mute)}
 .tog input{width:18px;height:18px;accent-color:var(--pri)}
 .acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -180,7 +180,6 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 
  <section id="dview" class="card" hidden>
   <div class="top"><h2 style="font-size:20px"><span id="dvn"></span> <span class="sub" id="dvc"></span></h2><button id="dvback">← 돌아가기</button></div>
-  <div class="sub">단어를 누르면 발음이 나와.</div>
   <div class="row"><button id="dvhide">뜻 가리기</button><button id="dvcard">🃏 암기하기</button><button id="dvtest" class="go">✏️ 시험 보기</button></div>
   <div class="list" id="dvlist"></div>
  </section>
@@ -329,7 +328,7 @@ function localPass(ans,m){const A=ans.split(/[,，;\/]/).map(stem).filter(Boolea
 
 /* ---- quiz ---- */
 let Q=[],qi=0,right=0,res=[],state='ask',QB=B;
-function show(s){['setup','quiz','result','wlview','dview','bkview','fc','fcdone'].forEach(x=>$(x).hidden=x!==s);document.body.classList.toggle('wide',s==='wlview'||s==='dview');$('tabs').hidden=s==='quiz'||s==='fc';scrollTo(0,0)}
+function show(s){['setup','quiz','result','wlview','dview','bkview','fc','fcdone'].forEach(x=>$(x).hidden=x!==s);document.body.classList.toggle('wide',s==='wlview'||s==='dview');$('tabs').hidden=s==='quiz'||s==='fc';scrollTo(0,0);document.body.scrollTop=0}
 function start(list){if(!list.length)return;QB=B;Q=list;qi=0;right=0;res=[];show('quiz');ask()}
 $('start').onclick=()=>start(shuf(pool()));
 function ask(){state='ask';const x=Q[qi];$('quiz').classList.remove('ok','bad');
@@ -369,7 +368,7 @@ function drawDV(){const isMine=B.key==='mine',m=byId(B);VL=VL.map(x=>m[x.id]).fi
   h+=`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
  $('dvlist').innerHTML=h||'<div class="empty">단어가 없어</div>'}
 let delArm=null;
-$('dvlist').onclick=e=>{const w=e.target.closest('.cr b');if(w){speak(w.textContent);return}const d=e.target.closest('[data-del]');
+$('dvlist').onclick=e=>{const d=e.target.closest('[data-del]');
  if(d){const id=d.dataset.del;if(delArm!==id){delArm=id;d.textContent='진짜?';return}
   delArm=null;mineWords=mineWords.filter(x=>'m:'+norm(x.w)!==id);LS.set('mine_words',mineWords);B.wrong.delete(id);delete B.cnt[id];saveBook(B);VL=VL.filter(x=>x.id!==id);toast('삭제했어');drawDV();return}
  const m=e.target.closest('.mm');if(m&&dvhide)m.classList.toggle('peek')};
@@ -421,7 +420,7 @@ function drawWL(){const m=byId(B),L=[...B.wrong].map(i=>m[i]).filter(Boolean);$(
  let h='';if(wsort==='day'){L.sort((a,b)=>a.day-b.day||a.n-b.n);let d=0;for(const x of L){if(x.day!==d){d=x.day;h+=`<div class="lh">DAY ${pad(d)}</div>`}h+=item(x)}}
  else{L.sort((a,b)=>(B.cnt[b.id]||1)-(B.cnt[a.id]||1)||a.day-b.day||a.n-b.n);h=L.map(item).join('')}
  $('wlist').innerHTML=h}
-$('wlist').onclick=e=>{const w=e.target.closest('.cr b');if(w){speak(w.textContent);return}const b=e.target.closest('[data-done]');if(b){B.wrong.delete(b.dataset.done);saveBook(B);drawWL();return}const m=e.target.closest('.mm');if(m&&whide)m.classList.toggle('peek')};
+$('wlist').onclick=e=>{const b=e.target.closest('[data-done]');if(b){B.wrong.delete(b.dataset.done);saveBook(B);drawWL();return}const m=e.target.closest('.mm');if(m&&whide)m.classList.toggle('peek')};
 $('openwl').onclick=()=>{show('wlview');drawWL()};
 $('wlback').onclick=()=>{show('setup');drawSetup()};
 $('sortday').onclick=()=>{wsort='day';drawWL()};$('sortcnt').onclick=()=>{wsort='cnt';drawWL()};$('hidem').onclick=()=>{whide=!whide;drawWL()};
