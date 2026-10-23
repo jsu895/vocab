@@ -126,7 +126,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.2</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.3</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -181,7 +181,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 
  <section id="dview" class="card" hidden>
   <div class="top"><h2 style="font-size:20px"><span id="dvn"></span> <span class="sub" id="dvc"></span></h2><button id="dvback">← 돌아가기</button></div>
-  <div class="row"><button id="dvhide">뜻 가리기</button><button id="dvcard">🃏 암기하기</button><button id="dvtest" class="go">✏️ 시험 보기</button></div>
+  <button id="dvhide">뜻 가리기</button>
   <div class="list" id="dvlist"></div>
  </section>
 
@@ -197,8 +197,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
  <section id="fcdone" class="card" hidden>
   <div class="score"><b id="fdscore"></b><div class="sub" id="fdsub"></div></div>
   <div class="cl" id="fdlist"></div>
-  <div class="row"><button id="fdagain">🃏 다시 암기</button><button id="fdtest" class="go">✏️ 시험 보기</button></div>
-  <button id="fdhome">처음으로</button>
+  <div class="row"><button id="fdagain">🃏 다시 암기</button><button id="fdhome" class="go">처음으로</button></div>
  </section>
 
  <section id="wlview" class="card" hidden>
@@ -206,7 +205,6 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div class="row"><button id="sortday" class="on">DAY 순</button><button id="sortcnt">많이 틀린순</button><button id="hidem">뜻 가리기</button></div>
   <div class="sub">외운 단어는 <b>외움</b>을 누르면 목록에서 빠져. 뜻 가리기 중엔 뜻을 누르면 보여.</div>
   <div class="list" id="wlist"></div>
-  <div class="row"><button id="wlcard">🃏 암기하기</button><button class="go" id="wltest">✏️ 시험 보기</button></div>
  </section>
 </div>
 <script>
@@ -401,14 +399,16 @@ $('retry').onclick=()=>start(shuf(res.filter(r=>r&&!r.ok).map(r=>r.x)));
 $('home').onclick=()=>{show('setup');drawSetup()};
 
 /* ---- word list view ---- */
+function colMajor(a){const h=Math.ceil(a.length/2),o=[];for(let i=0;i<h;i++){o.push(a[i]);if(i+h<a.length)o.push(a[i+h])}return o}
+function byDay(a){const g=new Map();for(const x of a){if(!g.has(x.day))g.set(x.day,[]);g.get(x.day).push(x)}return [...g.entries()].sort((p,q)=>p[0]-q[0])}
 let dvhide=false,VL=[],VLlabel='';
 function openList(list,label){VL=list;VLlabel=label;show('dview');drawDV()}
 function drawDV(){const isMine=B.key==='mine',m=byId(B);VL=VL.map(x=>m[x.id]).filter(Boolean);
  $('dvn').textContent=VLlabel;$('dvc').textContent=VL.length+'개';
- $('dvhide').classList.toggle('on',dvhide);$('dvlist').className='cl'+(dvhide?' hidem':'');$('dvtest').disabled=$('dvcard').disabled=!VL.length;
- let h='',d=0;for(const x of [...VL].sort((a,b)=>a.day-b.day||a.n-b.n)){
-  if(x.day!==d){d=x.day;const p=B.prog[d];h+=`<div class="lh">DAY ${pad(d)}${p?` <span style="font-family:var(--sans);font-size:11.5px;opacity:.8">· 최근 ${p.last.d} ${Math.round(p.last.r/p.last.t*100)}% · 최고 ${p.best}%</span>`:''}</div>`}
-  h+=`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
+ $('dvhide').classList.toggle('on',dvhide);$('dvlist').className='cl'+(dvhide?' hidem':'');
+ let h='';for(const [d,grp] of byDay([...VL].sort((a,b)=>a.day-b.day||a.n-b.n))){
+  {const p=B.prog[d];h+=`<div class="lh">DAY ${pad(d)}${p?` <span style="font-family:var(--sans);font-size:11.5px;opacity:.8">· 최근 ${p.last.d} ${Math.round(p.last.r/p.last.t*100)}% · 최고 ${p.best}%</span>`:''}</div>`}
+  for(const x of colMajor(grp))h+=`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
  $('dvlist').innerHTML=h||'<div class="empty">단어가 없어</div>'}
 let delArm=null;
 $('dvlist').onclick=e=>{const d=e.target.closest('[data-del]');
@@ -418,8 +418,6 @@ $('dvlist').onclick=e=>{const d=e.target.closest('[data-del]');
 $('actlist').onclick=()=>openList(pool(),selLabel());
 $('dvback').onclick=()=>{show('setup');drawSetup()};
 $('dvhide').onclick=()=>{dvhide=!dvhide;drawDV()};
-$('dvtest').onclick=()=>start(shuf(VL));
-$('dvcard').onclick=()=>startCards(VL);
 
 /* ---- flashcards ---- */
 let FQ=[],fcSet=[],fcTotal=0,fcKnown=0,fcMissed=new Set(),fcFlipped=false,fcDir=LS.get('fcdir','ek'),fcBusy=false;
@@ -449,26 +447,24 @@ $('fcyes').onclick=()=>answerCard(true);$('fcno').onclick=()=>answerCard(false);
 $('fcspk').onclick=()=>{if(FQ[0])speak(FQ[0].w)};
 $('fcdir').onclick=()=>{fcDir=fcDir==='ek'?'ke':'ek';LS.set('fcdir',fcDir);drawCard()};
 $('fcquit').onclick=()=>{show('setup');drawSetup()};
-$('fdagain').onclick=()=>startCards(fcSet);$('fdtest').onclick=()=>start(shuf(fcSet));$('fdhome').onclick=()=>{show('setup');drawSetup()};
+$('fdagain').onclick=()=>startCards(fcSet);$('fdhome').onclick=()=>{show('setup');drawSetup()};
 document.addEventListener('keydown',e=>{if($('fc').hidden||e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
  if(e.key===' '){e.preventDefault();flipCard()}else if(e.key==='ArrowRight')answerCard(true);else if(e.key==='ArrowLeft')answerCard(false)});
 
 /* ---- wrong list ---- */
 let wsort='day',whide=false;
-function drawWL(){const m=byId(B),L=[...B.wrong].map(i=>m[i]).filter(Boolean);$('wln').textContent=L.length+'개';$('wltest').disabled=$('wlcard').disabled=!L.length;
+function drawWL(){const m=byId(B),L=[...B.wrong].map(i=>m[i]).filter(Boolean);$('wln').textContent=L.length+'개';
  $('sortday').classList.toggle('on',wsort==='day');$('sortcnt').classList.toggle('on',wsort==='cnt');$('hidem').classList.toggle('on',whide);
  $('wlist').className='cl'+(whide?' hidem':'');
  if(!L.length){$('wlist').innerHTML='<div class="empty">틀린 단어가 없어</div>';return}
  const item=x=>`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd"><span class="x">${B.cnt[x.id]||1}회</span><button data-done="${esc(x.id)}">외움</button></span></div>`;
- let h='';if(wsort==='day'){L.sort((a,b)=>a.day-b.day||a.n-b.n);let d=0;for(const x of L){if(x.day!==d){d=x.day;h+=`<div class="lh">DAY ${pad(d)}</div>`}h+=item(x)}}
- else{L.sort((a,b)=>(B.cnt[b.id]||1)-(B.cnt[a.id]||1)||a.day-b.day||a.n-b.n);h=L.map(item).join('')}
+ let h='';if(wsort==='day'){L.sort((a,b)=>a.day-b.day||a.n-b.n);for(const [d,grp] of byDay(L)){h+=`<div class="lh">DAY ${pad(d)}</div>`+colMajor(grp).map(item).join('')}}
+ else{L.sort((a,b)=>(B.cnt[b.id]||1)-(B.cnt[a.id]||1)||a.day-b.day||a.n-b.n);h=colMajor(L).map(item).join('')}
  $('wlist').innerHTML=h}
 $('wlist').onclick=e=>{const b=e.target.closest('[data-done]');if(b){B.wrong.delete(b.dataset.done);saveBook(B);drawWL();return}const m=e.target.closest('.mm');if(m&&whide)m.classList.toggle('peek')};
 $('openwl').onclick=()=>{show('wlview');drawWL()};
 $('wlback').onclick=()=>{show('setup');drawSetup()};
 $('sortday').onclick=()=>{wsort='day';drawWL()};$('sortcnt').onclick=()=>{wsort='cnt';drawWL()};$('hidem').onclick=()=>{whide=!whide;drawWL()};
-$('wlcard').onclick=()=>{const m=byId(B);startCards([...B.wrong].map(i=>m[i]).filter(Boolean))};
-$('wltest').onclick=()=>{const m=byId(B);start(shuf([...B.wrong].map(i=>m[i]).filter(Boolean)))};
 
 setTab(B.key);
 </script>
