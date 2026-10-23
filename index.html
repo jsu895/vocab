@@ -131,7 +131,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.4</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.5</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -154,8 +154,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div class="row" id="selrow"><button id="all">전체 선택</button><button id="none">선택 해제</button><button id="wrongset">틀린 단어만 (<span id="wc">0</span>)</button></div>
   <div class="selinfo" id="selinfo"></div>
   <div class="acts" id="acts" style="grid-template-columns:1fr 1fr"><button id="actlist">📖<span>단어 보기</span></button><button id="actcard" class="go">🃏<span>암기하기</span></button></div>
-  <button id="openwl">틀린 단어장 보기</button>
-  <div class="sub" id="rule">암기하기: 카드를 보고 뜻을 떠올린 다음 뒤집어서 확인해. 알면 ✓, 모르면 ✗. ✗한 단어는 틀린 단어장에 저장되고, 나머지 카드를 다 본 뒤에 다시 나와. ✗ 없이 DAY 단어를 전부 ✓로 넘겨야 그 DAY가 완료돼.</div>
+  <div class="sub" id="rule">모르는 단어는 마지막에 다시 나와. 전부 ✓면 DAY 완료!</div>
  </section>
 
  <section id="quiz" class="card" hidden>
@@ -251,7 +250,7 @@ function drawSetup(){
  $('addbox').hidden=!isMine;$('perday').textContent=PER_DAY;
  for(const d of [...B.sel])if(d>nd)B.sel.delete(d);if(!B.sel.size&&nd)B.sel.add(isMine?nd:1);
  $('emptymine').hidden=!(isMine&&!nd);
- ['dayh','days','selrow','selinfo','acts','openwl','rule'].forEach(id=>$(id).hidden=isMine&&!nd);
+ ['dayh','days','selrow','selinfo','acts','rule'].forEach(id=>$(id).hidden=isMine&&!nd);
  $('days').innerHTML=Array.from({length:nd},(_,i)=>{const n=B.all().filter(x=>x.day===i+1).length;const p=B.prog[i+1];
   const sub=p?`<span class="pg g">✓${p.n>1?' '+p.n+'회':''}</span>`:(isMine&&n<PER_DAY?`<span class="pg">${n}/${PER_DAY}</span>`:'<span class="pg" style="opacity:.45">—</span>');
   return `<button data-d="${i+1}" class="${!B.useWrong&&B.sel.has(i+1)?'on':''}${p?' done':''}">${pad(i+1)}${sub}</button>`}).join('');
@@ -471,7 +470,7 @@ function drawWL(){const m=byId(B),L=[...B.wrong].map(i=>m[i]).filter(Boolean);$(
  else{L.sort((a,b)=>(B.cnt[b.id]||1)-(B.cnt[a.id]||1)||a.day-b.day||a.n-b.n);h=colMajor(L).map(item).join('')}
  $('wlist').innerHTML=h}
 $('wlist').onclick=e=>{const b=e.target.closest('[data-done]');if(b){B.wrong.delete(b.dataset.done);saveBook(B);drawWL();return}const m=e.target.closest('.mm');if(m&&whide)m.classList.toggle('peek')};
-$('openwl').onclick=()=>{show('wlview');drawWL()};
+
 $('wlback').onclick=()=>{show('setup');drawSetup()};
 $('sortday').onclick=()=>{wsort='day';drawWL()};$('sortcnt').onclick=()=>{wsort='cnt';drawWL()};$('hidem').onclick=()=>{whide=!whide;drawWL()};
 
