@@ -123,10 +123,15 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 .flip.go-l{transform:translateX(-60px) rotate(-4deg);opacity:0}.flip.go-r{transform:translateX(60px) rotate(4deg);opacity:0}
 .nob{color:var(--bad);font-size:18px}
 .yesb{background:var(--ok)!important;border-color:var(--ok)!important;box-shadow:0 4px 0 #0d7046!important}
+.rst{font-family:var(--sans);font-size:11.5px;padding:2px 8px;border-radius:8px;border-width:1.5px;box-shadow:0 2px 0 var(--line);margin-left:6px;color:var(--bad)}
+.back{font-size:17px;padding:9px 16px;white-space:nowrap}
+.back .arr{color:var(--bad);font-size:21px;font-weight:700;margin-right:2px}
+.dirb{font-size:14px;padding:9px 12px;white-space:nowrap}
+.flip .rep{font-size:12px;color:var(--bad);background:var(--bad-bg);padding:2px 10px;border-radius:999px}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.3</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.4</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -137,7 +142,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
    <h2>모르는 단어 추가</h2>
    <div class="addf">
     <input type="text" id="nw" placeholder="영어 단어" lang="en" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <input type="text" id="nm" placeholder="한글 뜻 (예: 포기하다, 버리다)" lang="ko" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input type="text" id="nm" placeholder="한글 뜻" lang="ko" autocomplete="off" autocorrect="off" spellcheck="false">
     <button class="go" id="addbtn">추가</button>
    </div>
    <div class="msg" id="addmsg"></div>
@@ -148,9 +153,9 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div class="empty" id="emptymine" hidden>아직 추가한 단어가 없어.<br>위에서 단어를 넣으면 <b id="perday"></b>개씩 DAY로 묶여.</div>
   <div class="row" id="selrow"><button id="all">전체 선택</button><button id="none">선택 해제</button><button id="wrongset">틀린 단어만 (<span id="wc">0</span>)</button></div>
   <div class="selinfo" id="selinfo"></div>
-  <div class="acts" id="acts"><button id="actlist">📖<span>단어 보기</span></button><button id="actcard">🃏<span>암기하기</span></button><button id="start" class="go">✏️<span>시험 보기</span></button></div>
+  <div class="acts" id="acts" style="grid-template-columns:1fr 1fr"><button id="actlist">📖<span>단어 보기</span></button><button id="actcard" class="go">🃏<span>암기하기</span></button></div>
   <button id="openwl">틀린 단어장 보기</button>
-  <div class="sub" id="rule">시험은 영어 보고 한글 뜻 쓰기야. 뜻 하나만 맞아도 정답이고 어미가 달라도 통과야.</div>
+  <div class="sub" id="rule">암기하기: 카드를 보고 뜻을 떠올린 다음 뒤집어서 확인해. 알면 ✓, 모르면 ✗. ✗한 단어는 틀린 단어장에 저장되고, 나머지 카드를 다 본 뒤에 다시 나와. ✗ 없이 DAY 단어를 전부 ✓로 넘겨야 그 DAY가 완료돼.</div>
  </section>
 
  <section id="quiz" class="card" hidden>
@@ -173,20 +178,20 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
  </section>
 
  <section id="bkview" class="card" hidden>
-  <div class="top"><h2 style="font-size:20px">백업</h2><button id="bkback">← 돌아가기</button></div>
+  <div class="top"><h2 style="font-size:20px">백업</h2><button id="bkback" class="back"><span class="arr">←</span> 돌아가기</button></div>
   <div class="sub">백업 코드에는 내 단어, 두 단어장의 틀린 단어 기록, 진도가 다 들어가. 붙여넣으면 지금 기록에 합쳐져. 가끔 메모 앱에 복사해 둬.</div>
   <div class="row"><button id="backup">전체 백업 코드 만들기</button><button id="restore">코드 붙여넣기</button></div>
   <div id="bkbox"><textarea id="bktext" spellcheck="false"></textarea><div style="height:8px"></div><div class="row"><button id="bkcopy">복사</button><button id="bkapply" class="go">이 코드로 복원</button></div><div class="msg" id="bkmsg"></div></div>
  </section>
 
  <section id="dview" class="card" hidden>
-  <div class="top"><h2 style="font-size:20px"><span id="dvn"></span> <span class="sub" id="dvc"></span></h2><button id="dvback">← 돌아가기</button></div>
+  <div class="top"><h2 style="font-size:20px"><span id="dvn"></span> <span class="sub" id="dvc"></span></h2><button id="dvback" class="back"><span class="arr">←</span> 돌아가기</button></div>
   <button id="dvhide">뜻 가리기</button>
   <div class="list" id="dvlist"></div>
  </section>
 
  <section id="fc" class="card" hidden>
-  <div class="top"><span id="fcprog"></span><span><button class="link" id="fcdir" style="display:inline"></button> · <button class="link" id="fcquit" style="display:inline">그만하기</button></span></div>
+  <div class="top"><span id="fcprog"></span><span style="display:flex;gap:8px"><button id="fcdir" class="dirb"></button><button id="fcquit" class="back"><span class="arr">✕</span> 그만하기</button></span></div>
   <div class="bar"><i id="fcbar"></i></div>
   <div class="flip" id="flip"></div>
   <button class="spk" id="fcspk">🔊 발음 듣기</button>
@@ -201,7 +206,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
  </section>
 
  <section id="wlview" class="card" hidden>
-  <div class="top"><h2 style="font-size:20px">틀린 단어장 <span class="sub" id="wln"></span></h2><button id="wlback">← 돌아가기</button></div>
+  <div class="top"><h2 style="font-size:20px">틀린 단어장 <span class="sub" id="wln"></span></h2><button id="wlback" class="back"><span class="arr">←</span> 돌아가기</button></div>
   <div class="row"><button id="sortday" class="on">DAY 순</button><button id="sortcnt">많이 틀린순</button><button id="hidem">뜻 가리기</button></div>
   <div class="sub">외운 단어는 <b>외움</b>을 누르면 목록에서 빠져. 뜻 가리기 중엔 뜻을 누르면 보여.</div>
   <div class="list" id="wlist"></div>
@@ -247,13 +252,13 @@ function drawSetup(){
  for(const d of [...B.sel])if(d>nd)B.sel.delete(d);if(!B.sel.size&&nd)B.sel.add(isMine?nd:1);
  $('emptymine').hidden=!(isMine&&!nd);
  ['dayh','days','selrow','selinfo','acts','openwl','rule'].forEach(id=>$(id).hidden=isMine&&!nd);
- $('days').innerHTML=Array.from({length:nd},(_,i)=>{const n=B.all().filter(x=>x.day===i+1).length;const p=B.prog[i+1],lp=p&&p.last?Math.round(p.last.r/p.last.t*100):null;
-  const sub=lp!=null?`<span class="pg ${grade(lp)}">${lp}%</span>`:(isMine&&n<PER_DAY?`<span class="pg">${n}/${PER_DAY}</span>`:'<span class="pg" style="opacity:.45">—</span>');
+ $('days').innerHTML=Array.from({length:nd},(_,i)=>{const n=B.all().filter(x=>x.day===i+1).length;const p=B.prog[i+1];
+  const sub=p?`<span class="pg g">✓${p.n>1?' '+p.n+'회':''}</span>`:(isMine&&n<PER_DAY?`<span class="pg">${n}/${PER_DAY}</span>`:'<span class="pg" style="opacity:.45">—</span>');
   return `<button data-d="${i+1}" class="${!B.useWrong&&B.sel.has(i+1)?'on':''}${p?' done':''}">${pad(i+1)}${sub}</button>`}).join('');
  const doneN=Array.from({length:nd},(_,i)=>B.prog[i+1]).filter(Boolean).length;$('progbox').hidden=!nd;
  $('progtxt').textContent=`${doneN} / ${nd} DAY 완료`;$('progbar').style.width=(nd?doneN/nd*100:0)+'%';
  $('wc').textContent=B.wrong.size;$('wrongset').classList.toggle('on',B.useWrong);$('wrongset').disabled=!B.wrong.size&&!B.useWrong;
- const n=pool().length;$('selinfo').textContent=n?`${selLabel()} · ${n}개`:'DAY를 골라줘';['actlist','actcard','start'].forEach(id=>$(id).disabled=!n);
+ const n=pool().length;$('selinfo').textContent=n?`${selLabel()} · ${n}개`:'DAY를 골라줘';['actlist','actcard'].forEach(id=>$(id).disabled=!n);
 }
 $('days').onclick=e=>{const b=e.target.closest('button');if(!b)return;B.useWrong=false;const d=+b.dataset.d;B.sel.has(d)?B.sel.delete(d):B.sel.add(d);drawSetup()};
 $('all').onclick=()=>{B.useWrong=false;for(let i=1;i<=B.days();i++)B.sel.add(i);drawSetup()};
@@ -319,7 +324,7 @@ function nwCheck(){fixNw();const w=$('nw').value;const d=dupInfo(w);
  $('addbtn').textContent=d&&d.where==='main'?'그래도 추가':'추가';
  if(d){setMsg(d.where==='main'?'📌 '+d.text+' · 다른 뜻을 적고 「그래도 추가」를 누르면 내 단어장에 저장돼':'✋ '+d.text,d.where==='main'?'info':'bad');return}
  const k=norm(w);if(k&&KNOWN_DICT[k]){$('nm').placeholder='비워두면 자동: '+KNOWN_DICT[k];setMsg('원래 단어장에 있던 단어라 뜻을 비워두면 자동으로 채워져','info')}
- else{$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';const si=similarInfo(w);setMsg(si||'',si?'info':'')}}
+ else{$('nm').placeholder='한글 뜻';const si=similarInfo(w);setMsg(si||'',si?'info':'')}}
 $('nw').addEventListener('input',e=>{if(e.isComposing)return;clearTimeout(nwT);nwT=setTimeout(nwCheck,450)});
 $('nw').addEventListener('compositionend',()=>{clearTimeout(nwT);nwT=setTimeout(nwCheck,450)});
 $('nw').addEventListener('blur',()=>{clearTimeout(nwT);nwCheck()});
@@ -335,7 +340,7 @@ function addWord(){clearTimeout(nwT);clearTimeout(nmT);fixNw();fixNm();
  if(!m){setMsg('뜻도 입력해줘','bad');$('nm').focus();return}
  mineWords.push({w,m,t:Date.now()});LS.set('mine_words',mineWords);
  const i=mineWords.length-1;setMsg(`✓ ${w} 추가 · DAY ${pad(Math.floor(i/PER_DAY)+1)} ${i%PER_DAY+1}번`+(i%PER_DAY===0&&i>0?' (새 DAY 시작!)':''),'ok');
- $('nw').value='';$('nm').value='';$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';$('addbtn').textContent='추가';
+ $('nw').value='';$('nm').value='';$('nm').placeholder='한글 뜻';$('addbtn').textContent='추가';
  B.useWrong=false;B.sel=new Set([Math.floor(i/PER_DAY)+1]);drawSetup();$('nw').focus()}
 $('addbtn').onclick=addWord;
 $('nw').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();clearTimeout(nwT);nwCheck();$('nm').focus()}});
@@ -369,9 +374,9 @@ function localPass(ans,m){const A=ans.split(/[,，;\/]/).map(stem).filter(Boolea
 
 /* ---- quiz ---- */
 let Q=[],qi=0,right=0,res=[],state='ask',QB=B;
-function show(s){['setup','quiz','result','wlview','dview','bkview','fc','fcdone'].forEach(x=>$(x).hidden=x!==s);document.body.classList.toggle('wide',s==='wlview'||s==='dview');$('tabs').hidden=s==='quiz'||s==='fc';scrollTo(0,0);document.body.scrollTop=0}
+const TTL={setup:'단어장',dview:'단어 보기',fc:'암기하기',fcdone:'암기 완료',wlview:'틀린 단어장',bkview:'백업',quiz:'단어 시험',result:'시험 결과'};
+function show(s){$('ttl').textContent=TTL[s]||'단어장';['setup','quiz','result','wlview','dview','bkview','fc','fcdone'].forEach(x=>$(x).hidden=x!==s);document.body.classList.toggle('wide',s==='wlview'||s==='dview');$('tabs').hidden=s==='quiz'||s==='fc';scrollTo(0,0);document.body.scrollTop=0}
 function start(list){if(!list.length)return;QB=B;Q=list;qi=0;right=0;res=[];show('quiz');ask()}
-$('start').onclick=()=>start(shuf(pool()));
 function ask(){state='ask';const x=Q[qi];$('quiz').classList.remove('ok','bad');
  $('prog').textContent=`${qi+1} / ${Q.length}`;$('sc').textContent=`맞음 ${right}`;$('pbar').style.width=(qi/Q.length*100)+'%';
  $('q').textContent=x.w;$('tag').textContent=`${QB.key==='mine'?'내 단어 · ':''}DAY ${pad(x.day)} · ${x.n}번`;
@@ -407,7 +412,7 @@ function drawDV(){const isMine=B.key==='mine',m=byId(B);VL=VL.map(x=>m[x.id]).fi
  $('dvn').textContent=VLlabel;$('dvc').textContent=VL.length+'개';
  $('dvhide').classList.toggle('on',dvhide);$('dvlist').className='cl'+(dvhide?' hidem':'');
  let h='';for(const [d,grp] of byDay([...VL].sort((a,b)=>a.day-b.day||a.n-b.n))){
-  {const p=B.prog[d];h+=`<div class="lh">DAY ${pad(d)}${p?` <span style="font-family:var(--sans);font-size:11.5px;opacity:.8">· 최근 ${p.last.d} ${Math.round(p.last.r/p.last.t*100)}% · 최고 ${p.best}%</span>`:''}</div>`}
+  {const p=B.prog[d];h+=`<div class="lh">DAY ${pad(d)}${p?` <span style="font-family:var(--sans);font-size:11.5px;opacity:.8">· ✓ 완료 ${p.last.d}${p.n>1?` (${p.n}회)`:''}</span>`:''}</div>`}
   for(const x of colMajor(grp))h+=`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
  $('dvlist').innerHTML=h||'<div class="empty">단어가 없어</div>'}
 let delArm=null;
@@ -420,24 +425,28 @@ $('dvback').onclick=()=>{show('setup');drawSetup()};
 $('dvhide').onclick=()=>{dvhide=!dvhide;drawDV()};
 
 /* ---- flashcards ---- */
-let FQ=[],fcSet=[],fcTotal=0,fcKnown=0,fcMissed=new Set(),fcFlipped=false,fcDir=LS.get('fcdir','ek'),fcBusy=false;
-function startCards(list){if(!list.length)return;fcSet=[...list].sort((a,b)=>a.day-b.day||a.n-b.n);FQ=[...fcSet];fcTotal=list.length;fcKnown=0;fcMissed=new Set();show('fc');drawCard()}
+let fcFirst=new Map(),fcB=null,FQ=[],fcSet=[],fcTotal=0,fcKnown=0,fcMissed=new Set(),fcFlipped=false,fcDir=LS.get('fcdir','ek'),fcBusy=false;
+function startCards(list){if(!list.length)return;fcSet=[...list].sort((a,b)=>a.day-b.day||a.n-b.n);FQ=[...fcSet];fcTotal=list.length;fcKnown=0;fcMissed=new Set();fcFirst=new Map();fcB=B;show('fc');drawCard()}
 $('actcard').onclick=()=>startCards(pool());
 function drawCard(){const x=FQ[0],el=$('flip');fcFlipped=false;el.className='flip';
  const front=fcDir==='ek'?`<div class="big">${esc(x.w)}</div>`:`<div class="big kr">${esc(x.m)}</div>`;
- el.innerHTML=front+`<div class="hint">눌러서 뒤집기</div>`;
+ el.innerHTML=front+(fcMissed.has(x.id)?`<div class="rep">다시 나온 카드</div>`:'')+`<div class="hint">눌러서 뒤집기</div>`;
  $('fcprog').textContent=`외움 ${fcKnown} / ${fcTotal} · 남은 카드 ${FQ.length}`;$('fcbar').style.width=(fcKnown/fcTotal*100)+'%';
  $('fcdir').textContent=fcDir==='ek'?'영→한':'한→영'}
 function flipCard(){const x=FQ[0],el=$('flip');if(!x)return;fcFlipped=!fcFlipped;el.classList.toggle('back',fcFlipped);
  el.innerHTML=fcFlipped?(fcDir==='ek'?`<div class="small">${esc(x.w)}</div><div class="big kr">${esc(x.m)}</div>`:`<div class="small">${esc(x.m)}</div><div class="big">${esc(x.w)}</div>`)+`<div class="hint">DAY ${pad(x.day)} · ${x.n}번</div>`
   :(fcDir==='ek'?`<div class="big">${esc(x.w)}</div>`:`<div class="big kr">${esc(x.m)}</div>`)+`<div class="hint">눌러서 뒤집기</div>`}
 function answerCard(known){if(fcBusy||!FQ.length)return;fcBusy=true;const el=$('flip');el.classList.add(known?'go-r':'go-l');
- setTimeout(()=>{const x=FQ.shift();if(known){fcKnown++}else{fcMissed.add(x.id);const pos=Math.min(FQ.length,3+Math.floor(Math.random()*4));FQ.splice(pos,0,x)}
+ setTimeout(()=>{const x=FQ.shift();if(!fcFirst.has(x.id)){fcFirst.set(x.id,known);if(known)fcB.wrong.delete(x.id);else{fcB.wrong.add(x.id);fcB.cnt[x.id]=(fcB.cnt[x.id]||0)+1}saveBook(fcB)}if(known){fcKnown++}else{fcMissed.add(x.id);FQ.push(x)}
   fcBusy=false;if(!FQ.length)doneCards();else drawCard()},170)}
-function doneCards(){show('fcdone');const first=fcTotal-fcMissed.size;$('fdscore').textContent=`${fcTotal}개 다 외움!`;
- $('fdsub').textContent=`처음부터 안 단어 ${first}개 · 다시 본 단어 ${fcMissed.size}개`;
+function cardResults(){const m=Object.fromEntries(fcSet.map(x=>[x.id,x]));return [...fcFirst.entries()].map(([id,ok])=>({x:m[id],ok})).filter(r=>r.x)}
+function recordDone(b,list,missed){const by={},bad=new Set();for(const x of list){by[x.day]=(by[x.day]||0)+1;if(missed&&missed.has(x.id))bad.add(x.day)}const done=[];
+ for(const [d,c] of Object.entries(by)){const size=b.all().filter(x=>x.day===+d).length;if(!size||c<size||bad.has(+d))continue;const p=b.prog[d]||{n:0};p.n=(p.n||0)+1;p.last={d:today()};b.prog[d]=p;done.push(+d)}
+ LS.set(b.pk,b.prog);return done}
+function doneCards(){show('fcdone');const done=recordDone(fcB,fcSet,fcMissed);$('fdscore').textContent=fcMissed.size?'끝까지 봤어!':'다 알았어! 🎉';
+ $('fdsub').textContent=(done.length?`DAY ${done.map(pad).join(', ')} 완료 ✓`:'')+(fcMissed.size?`${done.length?' · ':''}헷갈린 ${fcMissed.size}개는 틀린 단어장에 저장됐어. 모르는 게 하나도 없어야 완료로 기록돼`:'');
  const m=Object.fromEntries(fcSet.map(x=>[x.id,x])),L=[...fcMissed].map(i=>m[i]).filter(Boolean);
- $('fdlist').hidden=!L.length;$('fdlist').innerHTML=L.length?`<div class="lh">다시 본 단어</div>`+L.map(x=>`<div class="cr"><em></em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span></div>`).join(''):''}
+ $('fdlist').hidden=!L.length;$('fdlist').innerHTML=L.length?`<div class="lh">헷갈린 단어</div>`+L.map(x=>`<div class="cr"><em></em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span></div>`).join(''):''}
 $('flip').addEventListener('pointerdown',e=>{const el=$('flip');el.dataset.x=e.clientX;el.dataset.y=e.clientY;el.style.transition='none';try{el.setPointerCapture(e.pointerId)}catch(_){}});
 $('flip').addEventListener('pointermove',e=>{const el=$('flip');if(el.dataset.x==null||el.dataset.x==='')return;const dx=e.clientX-el.dataset.x;if(Math.abs(dx)>8)el.style.transform=`translateX(${dx}px) rotate(${dx/25}deg)`});
 $('flip').addEventListener('pointerup',e=>{const el=$('flip');if(el.dataset.x==null||el.dataset.x==='')return;const dx=e.clientX-el.dataset.x,dy=e.clientY-el.dataset.y;el.dataset.x='';el.style.transition='';el.style.transform='';
