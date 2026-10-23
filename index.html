@@ -126,7 +126,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.1</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.2</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -136,8 +136,8 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div id="addbox" hidden>
    <h2>모르는 단어 추가</h2>
    <div class="addf">
-    <input type="text" id="nw" placeholder="영어 단어" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <input type="text" id="nm" placeholder="한글 뜻 (예: 포기하다, 버리다)" autocomplete="off">
+    <input type="text" id="nw" placeholder="영어 단어" lang="en" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" id="nm" placeholder="한글 뜻 (예: 포기하다, 버리다)" lang="ko" autocomplete="off" autocorrect="off" spellcheck="false">
     <button class="go" id="addbtn">추가</button>
    </div>
    <div class="msg" id="addmsg"></div>
@@ -276,18 +276,58 @@ function recordProgress(b,results){const by={};for(const r of results){(by[r.x.d
  LS.set(b.pk,b.prog)}
 const grade=p=>p>=80?'g':p>=50?'m':'b';
 
+/* ---- 한/영 자동 변환 (두벌식) ---- */
+const K2H={q:'ㅂ',w:'ㅈ',e:'ㄷ',r:'ㄱ',t:'ㅅ',y:'ㅛ',u:'ㅕ',i:'ㅑ',o:'ㅐ',p:'ㅔ',a:'ㅁ',s:'ㄴ',d:'ㅇ',f:'ㄹ',g:'ㅎ',h:'ㅗ',j:'ㅓ',k:'ㅏ',l:'ㅣ',z:'ㅋ',x:'ㅌ',c:'ㅊ',v:'ㅍ',b:'ㅠ',n:'ㅜ',m:'ㅡ',Q:'ㅃ',W:'ㅉ',E:'ㄸ',R:'ㄲ',T:'ㅆ',O:'ㅒ',P:'ㅖ'};
+const H2K={};for(const [k,v] of Object.entries(K2H))if(!H2K[v])H2K[v]=k;
+const CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ',JUNG='ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ',JONG=['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const CV={'ㅗㅏ':'ㅘ','ㅗㅐ':'ㅙ','ㅗㅣ':'ㅚ','ㅜㅓ':'ㅝ','ㅜㅔ':'ㅞ','ㅜㅣ':'ㅟ','ㅡㅣ':'ㅢ'};
+const CC={'ㄱㅅ':'ㄳ','ㄴㅈ':'ㄵ','ㄴㅎ':'ㄶ','ㄹㄱ':'ㄺ','ㄹㅁ':'ㄻ','ㄹㅂ':'ㄼ','ㄹㅅ':'ㄽ','ㄹㅌ':'ㄾ','ㄹㅍ':'ㄿ','ㄹㅎ':'ㅀ','ㅂㅅ':'ㅄ'};
+const SPLIT={};for(const [a,b] of Object.entries(CV))SPLIT[b]=a;for(const [a,b] of Object.entries(CC))SPLIT[b]=a;
+const isV=j=>JUNG.includes(j);
+function hangulToKeys(str){let o='';for(const ch of str){const c=ch.charCodeAt(0);
+ if(c>=0xAC00&&c<=0xD7A3){const i=c-0xAC00,jo=JONG[i%28],ju=JUNG[Math.floor(i/28)%21],ch0=CHO[Math.floor(i/588)];for(const j of [ch0,ju,jo])for(const x of (SPLIT[j]||j))o+=H2K[x]||''}
+ else if(/[ㄱ-ㅣ]/.test(ch)){for(const x of (SPLIT[ch]||ch))o+=H2K[x]||ch}else o+=ch}return o.toLowerCase()}
+function keysToHangul(str){let out='',cho='',jung='',jong='';
+ const flush=()=>{if(cho&&jung)out+=String.fromCharCode(0xAC00+CHO.indexOf(cho)*588+JUNG.indexOf(jung)*28+JONG.indexOf(jong));else out+=cho+jung;cho=jung=jong=''};
+ for(const ch of str){const j=K2H[ch]||K2H[ch.toLowerCase()];if(!j){flush();out+=ch;continue}
+  if(isV(j)){
+   if(jong){let mv=jong,keep='';if(SPLIT[jong]){keep=SPLIT[jong][0];mv=SPLIT[jong][1]}jong=keep;flush();cho=mv;jung=j}
+   else if(jung){if(cho&&CV[jung+j])jung=CV[jung+j];else if(!cho&&CV[jung+j])jung=CV[jung+j];else{flush();jung=j}}
+   else jung=j}
+  else{
+   if(!cho&&!jung)cho=j;
+   else if(!jung){flush();cho=j}
+   else if(!cho){flush();cho=j}
+   else if(!jong){if(JONG.includes(j))jong=j;else{flush();cho=j}}
+   else{if(CC[jong+j])jong=CC[jong+j];else{flush();cho=j}}}}
+ flush();return out}
+
 /* ---- add words (only link between the two books: duplicate check) ---- */
 function dupInfo(w){const k=norm(w);if(!k)return null;
  const i=mineWords.findIndex(x=>norm(x.w)===k);if(i>=0)return {where:'mine',text:`내 단어장 DAY ${pad(Math.floor(i/PER_DAY)+1)} ${i%PER_DAY+1}번에 이미 있어 (${mineWords[i].m})`};
  const a=MAIN_INDEX.get(k);if(a)return {where:'main',text:`선별 단어장 DAY ${pad(a.day)} ${a.n}번에 이미 있어 (${a.m})`};
  return null}
+function forms(k){k=k.toLowerCase();const o=new Set([k]);for(const suf of ['ies','es','s','ed','d','ing','ly','ness','ment','er']){if(k.length-suf.length>=3&&k.endsWith(suf)){const r=k.slice(0,-suf.length);o.add(r);if(suf==='ies')o.add(r+'y');if(suf==='ing'||suf==='ed')o.add(r+'e')}}return [...o]}
+const FORM_IDX=new Map();MAIN_ALL.forEach(x=>{for(const f of forms(norm(x.w))){if(!FORM_IDX.has(f))FORM_IDX.set(f,[]);FORM_IDX.get(f).push(x)}});
+function similarInfo(w){const k=norm(w);if(k.length<3)return null;const fk=forms(k),out=[];
+ for(const f of fk)for(const x of (FORM_IDX.get(f)||[]))if(norm(x.w)!==k&&!out.includes(x))out.push(x);
+ for(let i=0;i<mineWords.length;i++){const mw=norm(mineWords[i].w);if(mw!==k&&forms(mw).some(f=>fk.includes(f)))out.push({w:mineWords[i].w,m:mineWords[i].m,day:Math.floor(i/PER_DAY)+1,n:i%PER_DAY+1,mine:true})}
+ if(!out.length)return null;return '🔎 비슷한 단어: '+out.slice(0,3).map(x=>`${x.w} (${x.mine?'내 단어장':'선별 단어장'} DAY ${pad(x.day)} ${x.n}번 · ${x.m})`).join(' / ')}
 function setMsg(t,c){$('addmsg').textContent=t;$('addmsg').className='msg '+(c||'')}
-$('nw').addEventListener('input',()=>{const w=$('nw').value,d=dupInfo(w);
+let nwT,nmT;
+function fixNw(){const el=$('nw'),v=el.value;if(!/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(v))return false;el.value=hangulToKeys(v);toast('한글로 쳐서 영어로 바꿨어 → '+el.value);return true}
+function fixNm(){const el=$('nm'),v=el.value;if(!/[a-zA-Z]/.test(v))return false;el.value=v.replace(/[a-zA-Z]+/g,m=>keysToHangul(m));toast('영어로 쳐서 한글로 바꿨어 → '+el.value);return true}
+function nwCheck(){fixNw();const w=$('nw').value;const d=dupInfo(w);
  $('addbtn').textContent=d&&d.where==='main'?'그래도 추가':'추가';
  if(d){setMsg(d.where==='main'?'📌 '+d.text+' · 다른 뜻을 적고 「그래도 추가」를 누르면 내 단어장에 저장돼':'✋ '+d.text,d.where==='main'?'info':'bad');return}
  const k=norm(w);if(k&&KNOWN_DICT[k]){$('nm').placeholder='비워두면 자동: '+KNOWN_DICT[k];setMsg('원래 단어장에 있던 단어라 뜻을 비워두면 자동으로 채워져','info')}
- else{$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';setMsg('','')}});
-function addWord(){
+ else{$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';const si=similarInfo(w);setMsg(si||'',si?'info':'')}}
+$('nw').addEventListener('input',e=>{if(e.isComposing)return;clearTimeout(nwT);nwT=setTimeout(nwCheck,450)});
+$('nw').addEventListener('compositionend',()=>{clearTimeout(nwT);nwT=setTimeout(nwCheck,450)});
+$('nw').addEventListener('blur',()=>{clearTimeout(nwT);nwCheck()});
+$('nm').addEventListener('input',e=>{if(e.isComposing)return;clearTimeout(nmT);nmT=setTimeout(fixNm,600)});
+$('nm').addEventListener('blur',()=>{clearTimeout(nmT);fixNm()});
+function addWord(){clearTimeout(nwT);clearTimeout(nmT);fixNw();fixNm();
  const w=$('nw').value.trim().replace(/\s+/g,' '),k=norm(w);let m=$('nm').value.trim();
  if(!k){setMsg('영어 단어를 입력해줘','bad');$('nw').focus();return}
  if(!/^[a-zA-Z][a-zA-Z\s'\-\.]*$/.test(w)){setMsg('영어 단어만 입력할 수 있어','bad');return}
@@ -300,7 +340,7 @@ function addWord(){
  $('nw').value='';$('nm').value='';$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';$('addbtn').textContent='추가';
  B.useWrong=false;B.sel=new Set([Math.floor(i/PER_DAY)+1]);drawSetup();$('nw').focus()}
 $('addbtn').onclick=addWord;
-$('nw').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('nm').focus()}});
+$('nw').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();clearTimeout(nwT);nwCheck();$('nm').focus()}});
 $('nm').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addWord()}});
 
 /* ---- backup ---- */
