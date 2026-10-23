@@ -16,6 +16,7 @@ body{height:100%;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrol
 *{box-sizing:border-box}
 .wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:14px}
 .brand{display:flex;align-items:center;gap:10px}
+.ver{font-size:12px;color:var(--mute);margin-left:auto;align-self:flex-end;padding-bottom:6px}
 .bkbtn{font-size:13px;padding:6px 10px;border-radius:999px;margin-right:4px}
 .brand b{font-family:var(--cute);font-weight:400;font-size:15px;background:var(--sun);color:#4e3b00;padding:4px 10px;border-radius:999px;transform:rotate(-4deg)}
 .brand span{font-family:var(--cute);font-size:30px;color:var(--pri-d)}
@@ -125,7 +126,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span>단어 시험</span><small class="ver" id="ver">v1.1</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -277,24 +278,26 @@ const grade=p=>p>=80?'g':p>=50?'m':'b';
 
 /* ---- add words (only link between the two books: duplicate check) ---- */
 function dupInfo(w){const k=norm(w);if(!k)return null;
+ const i=mineWords.findIndex(x=>norm(x.w)===k);if(i>=0)return {where:'mine',text:`내 단어장 DAY ${pad(Math.floor(i/PER_DAY)+1)} ${i%PER_DAY+1}번에 이미 있어 (${mineWords[i].m})`};
  const a=MAIN_INDEX.get(k);if(a)return {where:'main',text:`선별 단어장 DAY ${pad(a.day)} ${a.n}번에 이미 있어 (${a.m})`};
- const i=mineWords.findIndex(x=>norm(x.w)===k);if(i>=0)return {where:'mine',text:`내 단어장 DAY ${pad(Math.floor(i/PER_DAY)+1)} ${i%PER_DAY+1}번에 이미 있어`};
  return null}
 function setMsg(t,c){$('addmsg').textContent=t;$('addmsg').className='msg '+(c||'')}
 $('nw').addEventListener('input',()=>{const w=$('nw').value,d=dupInfo(w);
- if(d){setMsg('✋ '+d.text,'bad');return}
+ $('addbtn').textContent=d&&d.where==='main'?'그래도 추가':'추가';
+ if(d){setMsg(d.where==='main'?'📌 '+d.text+' · 다른 뜻을 적고 「그래도 추가」를 누르면 내 단어장에 저장돼':'✋ '+d.text,d.where==='main'?'info':'bad');return}
  const k=norm(w);if(k&&KNOWN_DICT[k]){$('nm').placeholder='비워두면 자동: '+KNOWN_DICT[k];setMsg('원래 단어장에 있던 단어라 뜻을 비워두면 자동으로 채워져','info')}
  else{$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';setMsg('','')}});
 function addWord(){
  const w=$('nw').value.trim().replace(/\s+/g,' '),k=norm(w);let m=$('nm').value.trim();
  if(!k){setMsg('영어 단어를 입력해줘','bad');$('nw').focus();return}
  if(!/^[a-zA-Z][a-zA-Z\s'\-\.]*$/.test(w)){setMsg('영어 단어만 입력할 수 있어','bad');return}
- const d=dupInfo(w);if(d){setMsg('✋ 저장 안 됨 · '+d.text,'bad');return}
+ const d=dupInfo(w);if(d&&d.where==='mine'){setMsg('✋ 저장 안 됨 · '+d.text,'bad');return}
+ if(d&&d.where==='main'&&!m){setMsg('📌 '+d.text+' · 추가할 뜻을 적어줘','info');$('nm').focus();return}
  if(!m&&KNOWN_DICT[k])m=KNOWN_DICT[k];
  if(!m){setMsg('뜻도 입력해줘','bad');$('nm').focus();return}
  mineWords.push({w,m,t:Date.now()});LS.set('mine_words',mineWords);
  const i=mineWords.length-1;setMsg(`✓ ${w} 추가 · DAY ${pad(Math.floor(i/PER_DAY)+1)} ${i%PER_DAY+1}번`+(i%PER_DAY===0&&i>0?' (새 DAY 시작!)':''),'ok');
- $('nw').value='';$('nm').value='';$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';
+ $('nw').value='';$('nm').value='';$('nm').placeholder='한글 뜻 (예: 포기하다, 버리다)';$('addbtn').textContent='추가';
  B.useWrong=false;B.sel=new Set([Math.floor(i/PER_DAY)+1]);drawSetup();$('nw').focus()}
 $('addbtn').onclick=addWord;
 $('nw').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('nm').focus()}});
@@ -308,7 +311,7 @@ $('restore').onclick=()=>{$('bkbox').hidden=false;$('bktext').value='';$('bktext
 $('bkcopy').onclick=()=>{const t=$('bktext');navigator.clipboard?.writeText(t.value).then(()=>toast('복사했어')).catch(()=>{t.select();toast('직접 복사해줘')})||(t.select())};
 $('bkapply').onclick=()=>{let o;try{o=JSON.parse($('bktext').value)}catch(e){$('bkmsg').textContent='코드 형식이 맞지 않아';$('bkmsg').className='msg bad';return}
  const arr=Array.isArray(o)?o:o?.words;if(!Array.isArray(arr)){$('bkmsg').textContent='단어 목록을 찾을 수 없어';$('bkmsg').className='msg bad';return}
- let add=0,skip=0;for(const x of arr){if(!x||!x.w||!x.m){skip++;continue}if(dupInfo(x.w)){skip++;continue}mineWords.push({w:String(x.w).trim(),m:String(x.m).trim(),t:x.t||Date.now()});add++}
+ let add=0,skip=0;for(const x of arr){if(!x||!x.w||!x.m){skip++;continue}{const dd=dupInfo(x.w);if(dd&&dd.where==='mine'){skip++;continue}}mineWords.push({w:String(x.w).trim(),m:String(x.m).trim(),t:x.t||Date.now()});add++}
  LS.set('mine_words',mineWords);
  let wr=0;for(const k of ['main','mine']){const src=o&&o[k];if(!src)continue;const bk=BOOKS[k],ids=new Set(bk.all().map(x=>x.id));
   for(const id of (src.wrong||[]))if(ids.has(id)&&!bk.wrong.has(id)){bk.wrong.add(id);wr++}
