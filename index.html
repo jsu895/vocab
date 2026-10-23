@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="단어장"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#3f72d9"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
@@ -10,7 +10,9 @@
 :root{--bg:#d9e6f4;--card:#f8fbff;--soft:#edf3fb;--fg:#273049;--mute:#66708f;--line:#c9d8ec;--pri:#3f72d9;--pri-d:#2f5bb5;--pri-soft:#dfe9fb;--sun:#efc54a;--mine:#7c62d6;--mine-d:#6249b8;--mine-soft:#e9e3fa;--ok:#13915a;--ok-bg:#d3f0e0;--ok-sh:#9fd8bb;--bad:#d84542;--bad-bg:#f8dcdc;--bad-sh:#eab0ae;--sans:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--cute:"Jua","Gowun Dodum","Apple SD Gothic Neo",sans-serif;color-scheme:light}
 body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;background-image:radial-gradient(circle at 10% 6%,#efe3b8 0 80px,transparent 81px),radial-gradient(circle at 94% 28%,#cbdcf1 0 120px,transparent 121px);background-attachment:fixed}
 [hidden]{display:none!important}
-html{height:100%;overflow:hidden;overscroll-behavior:none}
+html{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+*{touch-action:manipulation}
+.flip{touch-action:pan-y}
 body{height:100%;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch}
 #addbox{display:flex;flex-direction:column;gap:10px}
 *{box-sizing:border-box}
@@ -131,7 +133,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.5</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.6</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -193,7 +195,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div class="top"><span id="fcprog"></span><span style="display:flex;gap:8px"><button id="fcdir" class="dirb"></button><button id="fcquit" class="back"><span class="arr">✕</span> 그만하기</button></span></div>
   <div class="bar"><i id="fcbar"></i></div>
   <div class="flip" id="flip"></div>
-  <button class="spk" id="fcspk">🔊 발음 듣기</button>
+  <div style="display:flex;gap:8px;justify-content:center"><button class="spk" id="fcundo">↩ 되돌리기</button><button class="spk" id="fcspk">🔊 발음 듣기</button></div>
   <div class="row"><button id="fcno" class="nob">✗ 몰라</button><button id="fcyes" class="go yesb">✓ 알아</button></div>
   <div class="kbd">카드를 누르면 뒤집혀 · 왼쪽으로 밀면 몰라, 오른쪽으로 밀면 알아</div>
  </section>
@@ -425,9 +427,9 @@ $('dvhide').onclick=()=>{dvhide=!dvhide;drawDV()};
 
 /* ---- flashcards ---- */
 let fcFirst=new Map(),fcB=null,FQ=[],fcSet=[],fcTotal=0,fcKnown=0,fcMissed=new Set(),fcFlipped=false,fcDir=LS.get('fcdir','ek'),fcBusy=false;
-function startCards(list){if(!list.length)return;fcSet=[...list].sort((a,b)=>a.day-b.day||a.n-b.n);FQ=[...fcSet];fcTotal=list.length;fcKnown=0;fcMissed=new Set();fcFirst=new Map();fcB=B;show('fc');drawCard()}
+function startCards(list){if(!list.length)return;fcSet=[...list].sort((a,b)=>a.day-b.day||a.n-b.n);FQ=[...fcSet];fcTotal=list.length;fcKnown=0;fcMissed=new Set();fcFirst=new Map();fcB=B;fcHist=[];show('fc');drawCard()}
 $('actcard').onclick=()=>startCards(pool());
-function drawCard(){const x=FQ[0],el=$('flip');fcFlipped=false;el.className='flip';
+function drawCard(){const x=FQ[0],el=$('flip');fcFlipped=false;el.className='flip';$('fcundo').disabled=!fcHist.length;
  const front=fcDir==='ek'?`<div class="big">${esc(x.w)}</div>`:`<div class="big kr">${esc(x.m)}</div>`;
  el.innerHTML=front+(fcMissed.has(x.id)?`<div class="rep">다시 나온 카드</div>`:'')+`<div class="hint">눌러서 뒤집기</div>`;
  $('fcprog').textContent=`외움 ${fcKnown} / ${fcTotal} · 남은 카드 ${FQ.length}`;$('fcbar').style.width=(fcKnown/fcTotal*100)+'%';
@@ -435,7 +437,8 @@ function drawCard(){const x=FQ[0],el=$('flip');fcFlipped=false;el.className='fli
 function flipCard(){const x=FQ[0],el=$('flip');if(!x)return;fcFlipped=!fcFlipped;el.classList.toggle('back',fcFlipped);
  el.innerHTML=fcFlipped?(fcDir==='ek'?`<div class="small">${esc(x.w)}</div><div class="big kr">${esc(x.m)}</div>`:`<div class="small">${esc(x.m)}</div><div class="big">${esc(x.w)}</div>`)+`<div class="hint">DAY ${pad(x.day)} · ${x.n}번</div>`
   :(fcDir==='ek'?`<div class="big">${esc(x.w)}</div>`:`<div class="big kr">${esc(x.m)}</div>`)+`<div class="hint">눌러서 뒤집기</div>`}
-function answerCard(known){if(fcBusy||!FQ.length)return;fcBusy=true;const el=$('flip');el.classList.add(known?'go-r':'go-l');
+let fcHist=[];
+function answerCard(known){if(fcBusy||!FQ.length)return;fcBusy=true;{const x=FQ[0];fcHist.push({FQ:[...FQ],known:fcKnown,missed:new Set(fcMissed),first:new Map(fcFirst),id:x.id,hadW:fcB.wrong.has(x.id),cnt:fcB.cnt[x.id]})}const el=$('flip');el.classList.add(known?'go-r':'go-l');
  setTimeout(()=>{const x=FQ.shift();if(!fcFirst.has(x.id)){fcFirst.set(x.id,known);if(known)fcB.wrong.delete(x.id);else{fcB.wrong.add(x.id);fcB.cnt[x.id]=(fcB.cnt[x.id]||0)+1}saveBook(fcB)}if(known){fcKnown++}else{fcMissed.add(x.id);FQ.push(x)}
   fcBusy=false;if(!FQ.length)doneCards();else drawCard()},170)}
 function cardResults(){const m=Object.fromEntries(fcSet.map(x=>[x.id,x]));return [...fcFirst.entries()].map(([id,ok])=>({x:m[id],ok})).filter(r=>r.x)}
@@ -451,6 +454,8 @@ $('flip').addEventListener('pointermove',e=>{const el=$('flip');if(el.dataset.x=
 $('flip').addEventListener('pointerup',e=>{const el=$('flip');if(el.dataset.x==null||el.dataset.x==='')return;const dx=e.clientX-el.dataset.x,dy=e.clientY-el.dataset.y;el.dataset.x='';el.style.transition='';el.style.transform='';
  if(dx>70)answerCard(true);else if(dx<-70)answerCard(false);else if(Math.abs(dx)<10&&Math.abs(dy)<10)flipCard()});
 $('flip').addEventListener('pointercancel',()=>{const el=$('flip');el.dataset.x='';el.style.transition='';el.style.transform=''});
+$('fcundo').onclick=()=>{if(fcBusy||!fcHist.length)return;const h=fcHist.pop();FQ=h.FQ;fcKnown=h.known;fcMissed=h.missed;fcFirst=h.first;
+ if(h.hadW)fcB.wrong.add(h.id);else fcB.wrong.delete(h.id);if(h.cnt==null)delete fcB.cnt[h.id];else fcB.cnt[h.id]=h.cnt;saveBook(fcB);show('fc');drawCard();toast('되돌렸어')};
 $('fcyes').onclick=()=>answerCard(true);$('fcno').onclick=()=>answerCard(false);
 $('fcspk').onclick=()=>{if(FQ[0])speak(FQ[0].w)};
 $('fcdir').onclick=()=>{fcDir=fcDir==='ek'?'ke':'ek';LS.set('fcdir',fcDir);drawCard()};
