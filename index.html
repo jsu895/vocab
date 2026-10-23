@@ -381,7 +381,7 @@ $('dvcard').onclick=()=>startCards(VL);
 
 /* ---- flashcards ---- */
 let FQ=[],fcSet=[],fcTotal=0,fcKnown=0,fcMissed=new Set(),fcFlipped=false,fcDir=LS.get('fcdir','ek'),fcBusy=false;
-function startCards(list){if(!list.length)return;fcSet=[...list];FQ=shuf(list);fcTotal=list.length;fcKnown=0;fcMissed=new Set();show('fc');drawCard()}
+function startCards(list){if(!list.length)return;fcSet=[...list].sort((a,b)=>a.day-b.day||a.n-b.n);FQ=[...fcSet];fcTotal=list.length;fcKnown=0;fcMissed=new Set();show('fc');drawCard()}
 $('actcard').onclick=()=>startCards(pool());
 function drawCard(){const x=FQ[0],el=$('flip');fcFlipped=false;el.className='flip';
  const front=fcDir==='ek'?`<div class="big">${esc(x.w)}</div>`:`<div class="big kr">${esc(x.m)}</div>`;
