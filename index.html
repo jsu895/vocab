@@ -88,6 +88,8 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;z-index:9;max-width:calc(100% - 32px)}
 .wide .wrap{max-width:980px}
 .cl{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.cr.b7{background:#eaf1fd}
+.mine .cr.b7{background:#f0ecfb}
 .cl .lh{grid-column:1/-1;font-family:var(--cute);font-size:13px;padding:5px 10px}
 .cr{box-shadow:inset -1px 0 #e3ebf6;display:grid;align-content:start;grid-template-columns:20px minmax(0,1fr) auto;column-gap:6px;row-gap:1px;align-items:baseline;padding:6px 8px;border-bottom:1px solid #e3ebf6;line-height:1.3}
 .cr em{font-style:normal;font-size:11px;color:var(--mute);text-align:right;font-variant-numeric:tabular-nums}
@@ -133,7 +135,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
 @media (prefers-reduced-motion:reduce){button,.card{transition:none}}
 .wrap{padding-top:max(20px,env(safe-area-inset-top,0px))!important}</style></head><body>
 <div class="wrap" id="app">
- <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.7</small></div>
+ <div class="brand"><button class="bkbtn" id="openbk" aria-label="백업">💾 백업</button><b>DAY</b><span id="ttl">단어장</span><small class="ver" id="ver">v1.8</small></div>
  <div class="tabs" id="tabs">
   <button data-b="main" class="on">선별 단어<small id="tmain"></small></button>
   <button data-b="mine">내 단어<small id="tmine"></small></button>
@@ -155,7 +157,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
   <div class="empty" id="emptymine" hidden>아직 추가한 단어가 없어.<br>위에서 단어를 넣으면 <b id="perday"></b>개씩 DAY로 묶여.</div>
   <div class="row" id="selrow"><button id="all">전체 선택</button><button id="none">선택 해제</button><button id="wrongset">틀린 단어만 (<span id="wc">0</span>)</button></div>
   <div class="selinfo" id="selinfo"></div>
-  <div class="acts" id="acts" style="grid-template-columns:1fr 1fr"><button id="actlist">📖<span>단어 보기</span></button><button id="actcard" class="go">🃏<span>암기하기</span></button></div>
+  <div class="acts" id="acts" style="grid-template-columns:1fr 1fr"><button id="actlist">📖<span>단어 보기</span></button><button id="actcard" class="go">🃏<span>시험 보기</span></button></div>
   <div class="sub" id="rule">모르는 단어는 마지막에 다시 나와. 전부 ✓면 DAY 완료!</div>
  </section>
 
@@ -203,7 +205,7 @@ textarea{font-size:12px;min-height:90px;resize:vertical}
  <section id="fcdone" class="card" hidden>
   <div class="score"><b id="fdscore"></b><div class="sub" id="fdsub"></div></div>
   <div class="cl" id="fdlist"></div>
-  <div class="row"><button id="fdagain">🃏 다시 암기</button><button id="fdhome" class="go">처음으로</button></div>
+  <div class="row"><button id="fdagain">🃏 다시 시험</button><button id="fdhome" class="go">처음으로</button></div>
  </section>
 
  <section id="wlview" class="card" hidden>
@@ -380,7 +382,7 @@ function localPass(ans,m){const A=ans.split(/[,，;\/]/).map(stem).filter(Boolea
 
 /* ---- quiz ---- */
 let Q=[],qi=0,right=0,res=[],state='ask',QB=B;
-const TTL={setup:'단어장',dview:'단어 보기',fc:'암기하기',fcdone:'암기 완료',wlview:'틀린 단어장',bkview:'백업',quiz:'단어 시험',result:'시험 결과'};
+const TTL={setup:'단어장',dview:'단어 보기',fc:'시험 보기',fcdone:'시험 완료',wlview:'틀린 단어장',bkview:'백업',quiz:'단어 시험',result:'시험 결과'};
 function show(s){$('ttl').textContent=TTL[s]||'단어장';['setup','quiz','result','wlview','dview','bkview','fc','fcdone'].forEach(x=>$(x).hidden=x!==s);document.body.classList.toggle('wide',s==='wlview'||s==='dview');$('tabs').hidden=s==='quiz'||s==='fc';scrollTo(0,0);document.body.scrollTop=0}
 function start(list){if(!list.length)return;QB=B;Q=list;qi=0;right=0;res=[];show('quiz');ask()}
 function ask(){state='ask';const x=Q[qi];$('quiz').classList.remove('ok','bad');
@@ -419,7 +421,8 @@ function drawDV(){const isMine=B.key==='mine',m=byId(B);VL=VL.map(x=>m[x.id]).fi
  $('dvhide').classList.toggle('on',dvhide);$('dvlist').className='cl'+(dvhide?' hidem':'');
  let h='';for(const [d,grp] of byDay([...VL].sort((a,b)=>a.day-b.day||a.n-b.n))){
   {const p=B.prog[d];h+=`<div class="lh">DAY ${pad(d)}${p?` <span style="font-family:var(--sans);font-size:11.5px;opacity:.8">· ✓ 완료 ${p.last.d}${p.n>1?` (${p.n}회)`:''}</span>`:''}</div>`}
-  for(const x of colMajor(grp))h+=`<div class="cr"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
+  const hh=Math.ceil(grp.length/2),cp=new Map(grp.map((x,i)=>[x.id,i<hh?i:i-hh]));
+  for(const x of colMajor(grp))h+=`<div class="cr${(cp.get(x.id)/7|0)%2?' b7':''}"><em>${x.n}</em><b>${esc(x.w)}</b><span class="mm">${esc(x.m)}</span><span class="sd">${B.wrong.has(x.id)?'<span class="x">틀림</span>':''}${isMine?`<button data-del="${esc(x.id)}">삭제</button>`:''}</span></div>`}
  $('dvlist').innerHTML=h||'<div class="empty">단어가 없어</div>'}
 let delArm=null;
 $('dvlist').onclick=e=>{const d=e.target.closest('[data-del]');
